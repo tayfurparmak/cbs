@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Coğrafi Bilgi Sistemleri</title>
+	<script src="vue.min.js"></script>
+	<style>
+		body {
+			font: 11px arial;
+		}
+
+		div {
+			margin-top: 5px;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="root">
+		<table width="100%">
+			<tr>
+				<td valign="top">
+					<div>
+						Nesne:
+						<select v-model="nesne">
+							<option v-for="item in combos">{{ item.ad }}</option>
+						</select>
+					</div>
+					<br>
+					<div v-if="nesne != '' && nesne != 'Nokta'">
+						Özellik:
+						<select v-model="ozellik">
+							<option v-for="item in nesneOzellikleri">{{ item.ad }}</option>
+						</select>
+					</div>
+					<br>
+					<div v-if="nesne == 'Poligon' && (ozellik == 'Dolu' || ozellik == 'Boş')">
+						<div v-for="item in poligonKordinatlari" style="border: 1px solid #aaa; padding: 10px;">
+							<div>
+								X:
+								<input type="number" v-model="item.x">
+							</div>
+							<div>
+								Y:
+								<input type="number" v-model="item.y">
+							</div>
+						</div>
+						<hr>
+						<div>
+							<button @click="poligonKordinatEkle()">Kordinat Ekle</button>
+							<button @click="poligonKordinatCikar()">Kordinat Çıkar</button>
+						</div>
+					</div>
+					<div v-if="nesne == 'Çizgi' || nesne == 'Nokta'">
+						<div>
+							X1:
+							<input type="number" v-model="x1">
+						</div>
+						<div>
+							Y1:
+							<input type="number" v-model="y1">
+						</div>
+					</div>
+					<div v-if="nesne == 'Çizgi'">
+						<div>
+							X2:
+							<input type="number" v-model="x2">
+						</div>
+						<div>
+							Y2:
+							<input type="number" v-model="y2">
+						</div>
+					</div>
+					<br>
+					<div>
+						<button @click="ciz()">Çiz</button>
+					</div>
+				</td>
+				<td valign="top">
+					<h3>Çizim Alanı</h3>
+					<div v-html="cizimAlani" style="border: 1px solid #aaa; padding: 10px;"></div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<script>
+		var root = new Vue({
+			el: "#root",
+			data: {
+				cizimAlani: "",
+				nesne: "Poligon",
+				ozellik: "Dolu",
+				combos: [{
+					ad: "Nokta",
+					ozellikler: [
+						// {
+						// 	ad: "Küçük"
+						// },
+						// {
+						// 	ad: "Orta"
+						// },
+						// {
+						// 	ad: "Büyük"
+						// },
+					],
+				}, {
+					ad: "Çizgi",
+					ozellikler: [{
+							ad: "Düz"
+						},
+						{
+							ad: "Kesik"
+						},
+						{
+							ad: "Noktalı"
+						},
+					],
+				}, {
+					ad: "Poligon",
+					ozellikler: [{
+							ad: "Boş"
+						},
+						{
+							ad: "Dolu"
+						},
+					],
+				}, ],
+				x1: 0,
+				y1: 0,
+				x2: 70,
+				y2: 70,
+				poligonKordinatlari: [{
+					x: 10,
+					y: 20
+				}, {
+					x: 10,
+					y: 60
+				}, {
+					x: 200,
+					y: 100
+				}, {
+					x: 100,
+					y: 20
+				}]
+			},
+			computed: {
+				nesneOzellikleri: function () {
+					that = this;
+					for (i in that.combos) {
+						if (that.combos[i].ad.indexOf(that.nesne) > -1) {
+							return that.combos[i].ozellikler;
+						}
+					}
+				}
+			},
+			methods: {
+				ciz: function () {
+					var that = this;
+					var nesne = that.nesne;
+					var ozellik = that.ozellik;
+					if (nesne == "Poligon") {
+						if (ozellik == "Dolu") {
+							var kordinatlar = []
+							for (i in that.poligonKordinatlari) {
+								var x = that.poligonKordinatlari[i].x;
+								var y = that.poligonKordinatlari[i].y;
+								kordinatlar.push(x + "," + y);
+							}
+							that.cizimAlani = `
+								<svg height="400" width="600">
+								  <polygon points="${kordinatlar.join(" ")}" style="fill:blue;stroke:black;stroke-width:1" />
+								</svg>
+							`;
+						} else if (ozellik == "Boş") {
+							var kordinatlar = []
+							for (i in that.poligonKordinatlari) {
+								var x = that.poligonKordinatlari[i].x;
+								var y = that.poligonKordinatlari[i].y;
+								kordinatlar.push(x + "," + y);
+							}
+							that.cizimAlani = `
+								<svg height="400" width="600">
+								  <polygon points="${kordinatlar.join(" ")}" style="fill:white;stroke:black;stroke-width:1" />
+								</svg>
+							`;
+						}
+					} else if (nesne == "Nokta") {
+						that.cizimAlani = `
+                            <svg height="400" width="600">
+                              <circle cx="${that.x1}" cy="${that.y1}" r="2" stroke="black" stroke-width="2" fill="black" />
+                            </svg>
+                        `;
+					} else if (nesne == "Çizgi") {
+						if (ozellik == "Düz") {
+							that.cizimAlani = `
+                                <svg height="400" width="600">
+                                  <line x1="${that.x1}" y1="${that.y1}" x2="${that.x2}" y2="${that.y2}" style="stroke:rgb(0,0,0);stroke-width:2" />
+                                </svg>
+							`;
+						} else if (ozellik == "Noktalı") {
+							that.cizimAlani = `
+                                <svg height="400" width="600">
+                                  <line x1="${that.x1}" y1="${that.y1}" x2="${that.x2}" y2="${that.y2}" style="stroke:rgb(0,0,0);stroke-width:2;stroke-dasharray:2" />
+                                </svg>
+							`;
+						} else if (ozellik == "Kesik") {
+							that.cizimAlani = `
+                                <svg height="400" width="600">
+                                  <line x1="${that.x1}" y1="${that.y1}" x2="${that.x2}" y2="${that.y2}" style="stroke:rgb(0,0,0);stroke-width:2;stroke-dasharray:8" />
+                                </svg>
+							`;
+						}
+					}
+				},
+				poligonKordinatEkle: function () {
+					var that = this;
+					that.poligonKordinatlari.push({
+						x: 0,
+						y: 0
+					});
+				},
+				poligonKordinatCikar: function () {
+					var that = this;
+					if (that.poligonKordinatlari.length > 3) {
+						that.poligonKordinatlari.pop();
+					}
+				}
+			}
+		});
+
+		root.ciz();
+	</script>
+</body>
+
+</html>
